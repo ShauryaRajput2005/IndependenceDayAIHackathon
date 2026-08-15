@@ -1,0 +1,2 @@
+﻿// GenerateButton — placeholder
+export {};

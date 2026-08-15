@@ -1,0 +1,2 @@
+﻿// useGenerateContent — placeholder
+export {};

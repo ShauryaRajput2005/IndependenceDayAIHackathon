@@ -1,0 +1,2 @@
+﻿// RecentContent — placeholder
+export {};

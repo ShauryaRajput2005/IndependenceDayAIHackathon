@@ -1,0 +1,2 @@
+﻿// FeedbackPanel — placeholder
+export {};

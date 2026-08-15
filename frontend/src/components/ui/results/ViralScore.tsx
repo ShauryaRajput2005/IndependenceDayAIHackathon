@@ -1,0 +1,2 @@
+﻿// ViralScore — placeholder
+export {};

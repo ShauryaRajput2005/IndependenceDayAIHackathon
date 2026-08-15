@@ -1,0 +1,2 @@
+﻿// ProductDetails — placeholder
+export {};

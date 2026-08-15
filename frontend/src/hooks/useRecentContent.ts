@@ -1,0 +1,2 @@
+﻿// useRecentContent — placeholder
+export {};

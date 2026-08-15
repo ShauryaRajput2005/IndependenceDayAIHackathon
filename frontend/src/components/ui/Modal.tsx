@@ -1,0 +1,2 @@
+﻿// Modal — placeholder
+export {};

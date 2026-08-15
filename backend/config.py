@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     gemini_api_key: str = ""
+    openrouter_api_key: str = ""
     klipy_api_key: str = ""
     # tenor_api_key kept as alias for backwards compatibility
     tenor_api_key: str = ""

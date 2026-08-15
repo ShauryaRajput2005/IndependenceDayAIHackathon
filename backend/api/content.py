@@ -17,7 +17,7 @@ from services.llm_service import llm_service
 from services import prompt_service
 from services import trend_service
 from services import memory_service
-from services import tenor_service
+from services import klipy_service
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -92,7 +92,7 @@ async def generate_content(payload: GenerateRequest, db: Session = Depends(get_d
         raise HTTPException(status_code=500, detail="Content generation failed.")
 
     # ── 6. Tenor GIF search (optional) ────────────────────────────────────────
-    gif = await tenor_service.search_gif(ai_response.meme.search_query)
+    gif = await klipy_service.search_gif(ai_response.meme.search_query)
 
     # ── 7. Persist generation ──────────────────────────────────────────────────
     response_payload = ai_response.model_dump()

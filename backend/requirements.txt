@@ -1,0 +1,7 @@
+# TrendPilot AI — Python dependencies
+# Populate with actual versions before installing.
+fastapi
+uvicorn
+pydantic
+httpx
+openai

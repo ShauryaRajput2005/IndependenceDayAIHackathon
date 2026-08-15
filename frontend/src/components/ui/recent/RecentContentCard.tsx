@@ -1,0 +1,2 @@
+﻿// RecentContentCard — placeholder
+export {};

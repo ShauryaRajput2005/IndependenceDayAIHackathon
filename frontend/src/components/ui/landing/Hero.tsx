@@ -1,0 +1,2 @@
+﻿// Hero — placeholder
+export {};

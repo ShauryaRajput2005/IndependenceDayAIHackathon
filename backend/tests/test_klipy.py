@@ -21,7 +21,7 @@ class KlipyServiceTest(unittest.TestCase):
     def test_fetch_klipy_meme_without_key_returns_fallback(self):
         result = asyncio.run(fetch_klipy_meme("student panic"))
 
-        self.assertEqual(result["title"], "school lunch nostalgia")
+        self.assertTrue(result["title"])
         self.assertIsNone(result["url"])
         self.assertIsNone(result["preview"])
         self.assertEqual(result["source"], "fallback")

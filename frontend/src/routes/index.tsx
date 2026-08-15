@@ -1,87 +1,352 @@
 import { useEffect, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowDown, ArrowRight, Check, ChevronRight, Copy, Flame, Gauge, Heart, MessageCircle, Play, RefreshCw, Sparkles, WandSparkles, Zap } from 'lucide-react'
+import { ArrowRight, Check, Copy, Flame, Heart, MessageCircle, Play, RefreshCw, Sparkles, WandSparkles } from 'lucide-react'
 import { toast } from 'sonner'
+import { API_BASE_URL, createFeedback, createProduct, generateContent, healthCheck } from '@/lib/api'
 
 export const Route = createFileRoute('/')({
   head: () => ({
     meta: [
-      { title: 'TrendPilot AI Studio · Your brand, in the scroll' },
+      { title: 'KAIROS' },
       { name: 'description', content: 'Turn one product idea into a complete, trend-aware content system.' },
-      { name: 'theme-color', content: '#2b3fd1' },
     ],
   }),
   component: Home,
 })
 
-type FormState = { brand: string; audience: string; product: string; tone: string; platform: string; requirements: string }
-type Output = { trend: string; hook: string; meme: string; dialogue: string[]; script: { label: string; detail: string }[]; caption: string }
+type FormState = {
+  brand: string
+  audience: string
+  product: string
+  tone: string
+  platform: string
+  requirements: string
+}
 
-const initialForm: FormState = { brand: 'CampusWear', audience: 'College students', product: 'A heavyweight oversized t-shirt built for long campus days', tone: 'Meme-first', platform: 'Instagram + Shorts', requirements: 'Use casual Hinglish. Keep it relatable, not corporate.' }
-const seedOutput: Output = { trend: 'POV · Hostel survival', hook: 'POV: your t-shirt survives hostel laundry better than your GPA', meme: 'Expectation vs Reality', dialogue: ['Bro, ye tee kaha se li?', 'CampusWear. 3 semesters, 0 shape loss.', 'Bhai resume bhi itna stable hota.'], script: [{ label: '0–3 sec · The setup', detail: 'Open on a chaotic hostel room. Text: “POV: laundry day is personal.”' }, { label: '3–8 sec · The proof', detail: 'Friend pulls the tee from the dryer. It still fits perfectly.' }, { label: '8–12 sec · The payoff', detail: 'Cut to the GPA joke. End on a clean product close-up.' }], caption: 'Hostel approved. Laundry tested. Still serving looks. 🔥 #CampusWear #POV' }
+type Output = {
+  generationId?: number
+  productId?: number
+  trend: string
+  hook: string
+  meme: string
+  dialogue: string[]
+  script: { label: string; detail: string }[]
+  caption: string
+  mediaUrl?: string | null
+  mediaTitle?: string | null
+  mediaSource?: string | null
+  mediaType?: string | null
+  mediaStatus?: string | null
+  mediaReason?: string | null
+}
+
+const initialForm: FormState = {
+  brand: '',
+  audience: '',
+  product: '',
+  tone: 'Meme-first',
+  platform: 'Instagram + Shorts',
+  requirements: '',
+}
 
 const tones = ['Meme-first', 'Dry & witty', 'Soft & relatable', 'Founder mode', 'Luxury casual']
-const features = [{ icon: Flame, title: 'Trend-aware', copy: 'A living format library spots the structure your audience already shares.' }, { icon: MessageCircle, title: 'Voice-led', copy: 'Your brand brain keeps every hook, line, and caption recognisably yours.' }, { icon: Gauge, title: 'Fast by design', copy: 'From rough product thought to a shootable content system in one pass.' }]
+const platforms = ['Instagram', 'YouTube Shorts', 'Instagram + Shorts']
+const angleDirections = [
+  'Switch to a contrarian POV with a sharper punchline.',
+  'Use an unexpected everyday situation and a fresh meme setup.',
+  'Make the angle more visual, with a different opening scene.',
+  'Use a creator-style confession angle with a new hook.',
+  'Make the joke more specific to the audience pain point.',
+]
+
+function isVideoMedia(url?: string | null) {
+  if (!url) return false
+  const cleanUrl = url.split('?')[0].toLowerCase()
+  return ['.mp4', '.webm', '.mov', '.m4v'].some((extension) => cleanUrl.endsWith(extension)) || url.toLowerCase().includes('format=mp4')
+}
+
+function buildDraftOutput(form: FormState): Output {
+  const brand = form.brand.trim() || 'Your brand'
+  const audience = form.audience.trim() || 'your audience'
+  const product = form.product.trim() || 'your product'
+
+  return {
+    trend: `${audience} insight`,
+    hook: `${brand} is ready to turn ${product} into a scroll-stopping angle.`,
+    meme: `${audience} Relatable POV`,
+    dialogue: ['Add your brief', 'Generate to get backend-written dialogue.'],
+    script: [
+      { label: '0-3 sec', detail: 'Your backend-generated opening scene appears here.' },
+      { label: '3-8 sec', detail: 'The product moment updates after generation.' },
+    ],
+    caption: 'Generate content to create a platform-ready caption.',
+  }
+}
 
 function Home() {
-  const navigate = useNavigate()
   const [intro, setIntro] = useState(true)
   const [form, setForm] = useState(initialForm)
   const [step, setStep] = useState<'home' | 'form' | 'results'>('home')
-  const [output, setOutput] = useState(seedOutput)
+  const [output, setOutput] = useState<Output | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [apiOnline, setApiOnline] = useState<boolean | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
-  const [activeFeature, setActiveFeature] = useState(0)
+  const [angleIndex, setAngleIndex] = useState(0)
+  const previewOutput = output ?? buildDraftOutput(form)
+  const canGenerate = Boolean(form.brand.trim() && form.audience.trim() && form.product.trim())
 
-  useEffect(() => { const timer = window.setTimeout(() => setIntro(false), 1700); return () => window.clearTimeout(timer) }, [])
-  useEffect(() => { if (step === 'results') navigate({ hash: 'results' }) }, [navigate, step])
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIntro(false), 900)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    healthCheck().then(() => setApiOnline(true)).catch(() => setApiOnline(false))
+  }, [])
 
   const update = (key: keyof FormState, value: string) => setForm((current) => ({ ...current, [key]: value }))
-  const generate = async (variation = false) => {
-    setIsGenerating(true); setFeedback(null)
-    await new Promise((resolve) => window.setTimeout(resolve, 1550))
-    setOutput(variation ? { ...seedOutput, trend: 'Starter pack · Campus chaos', hook: 'Nobody: absolutely nobody. Your friend: “Bhai ek tee recommend kar.”', meme: 'Starter Pack', caption: 'The unofficial uniform for overthinking, overdressing, and missing 8am classes. 💛' } : seedOutput)
-    setIsGenerating(false); setStep('results'); toast.success('Your content system is ready', { description: 'Five formats, one consistent brand voice.' })
-  }
-  const copy = async (text: string) => { await navigator.clipboard?.writeText(text); toast.success('Copied to clipboard') }
-  const submitFeedback = (value: string) => { setFeedback(value); toast.success('Preference saved', { description: 'TrendPilot will lean into this next time.' }) }
+  const backendPlatform = (platform: string) => platform.includes('Instagram') && platform.includes('Shorts') ? 'Both' : platform.includes('Shorts') ? 'YouTube Shorts' : 'Instagram'
+  const backendTone = (tone: string) => tone === 'Meme-first' ? 'Meme Style' : tone === 'Dry & witty' ? 'Sarcastic' : tone === 'Soft & relatable' ? 'Emotional' : tone === 'Founder mode' ? 'Professional' : tone === 'Luxury casual' ? 'Luxury' : 'Funny'
 
-  if (intro) return <Intro />
+  async function generate(variation = false) {
+    if (!canGenerate) {
+      toast.error('Add brand, audience, and product first')
+      setStep('form')
+      return
+    }
+    setIsGenerating(true)
+    setFeedback(null)
+    try {
+      const nextAngleIndex = variation ? angleIndex + 1 : angleIndex
+      const angleDirection = angleDirections[nextAngleIndex % angleDirections.length]
+      const requirements = variation
+        ? `${form.requirements}\nCreate a fresh alternate angle. Variation #${nextAngleIndex}: ${angleDirection}`
+        : form.requirements
+      const tone = backendTone(variation ? tones[nextAngleIndex % tones.length] : form.tone)
+      if (variation) setAngleIndex(nextAngleIndex)
+      const product = await createProduct({
+        name: form.brand,
+        category: 'Consumer Brand',
+        description: form.product,
+        features: form.product,
+        problem: 'Audience needs scroll-stopping content that feels native to the platform',
+        audience: form.audience,
+        platform: backendPlatform(form.platform),
+        tone,
+        requirements,
+      })
+      const content = await generateContent(product.product_id, tone, requirements)
+      const selectedMediaType = content.selected_media_type || content.meme?.mediaType || null
+      const mediaUrl = selectedMediaType === 'clip'
+        ? content.meme?.url || content.meme?.preview || null
+        : content.meme?.preview || content.meme?.url || null
+      setOutput({
+        generationId: content.generation_id,
+        productId: content.product_id,
+        trend: content.klipy_query,
+        hook: content.hook,
+        meme: content.meme_format,
+        dialogue: content.dialogue,
+        script: content.script.map((scene) => ({ label: scene.time, detail: scene.scene })),
+        caption: content.caption,
+        mediaUrl,
+        mediaTitle: content.meme?.title || null,
+        mediaSource: content.meme?.source || null,
+        mediaType: selectedMediaType,
+        mediaStatus: content.meme?.providerStatus || null,
+        mediaReason: content.media_reason || null,
+      })
+      setApiOnline(true)
+      setStep('results')
+      toast.success('Generated from backend', { description: API_BASE_URL })
+    } catch (error) {
+      setApiOnline(false)
+      toast.error('Backend generation failed', { description: error instanceof Error ? error.message : 'Check FastAPI is running.' })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  async function submitFeedback(value: string) {
+    setFeedback(value)
+    if (!output?.generationId) {
+      toast.success('Preference saved locally')
+      return
+    }
+    try {
+      await createFeedback(output.generationId, value)
+      toast.success('Feedback saved to backend')
+    } catch (error) {
+      toast.error('Could not save feedback', { description: error instanceof Error ? error.message : 'Check backend connection.' })
+    }
+  }
+
+  async function copy(text: string) {
+    await navigator.clipboard?.writeText(text)
+    toast.success('Copied to clipboard')
+  }
+
+  if (intro) {
+    return (
+      <div className="fixed inset-0 z-50 grid place-items-center bg-primary text-primary-foreground">
+        <div className="text-center">
+          <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-primary-foreground/10">
+            <Sparkles className="size-7 text-accent" />
+          </div>
+          <p className="mt-5 font-serif text-4xl tracking-tight">KAIROS</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <main className="min-h-dvh overflow-hidden bg-background text-foreground">
-      <nav className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-border/70 bg-background/80 px-5 py-4 backdrop-blur-xl md:px-10">
-        <button onClick={() => { setStep('home'); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="flex items-center gap-2.5" aria-label="Back to TrendPilot home"><span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm"><Sparkles className="size-4" /></span><span className="font-semibold tracking-tight">TrendPilot <span className="text-primary">AI Studio</span></span></button>
-        <div className="hidden items-center gap-7 text-sm text-muted-foreground md:flex"><a href="#studio" className="transition-colors hover:text-foreground">Studio</a><a href="#how" className="transition-colors hover:text-foreground">How it works</a><a href="#pulse" className="transition-colors hover:text-foreground">Content pulse</a></div>
-        <button onClick={() => setStep('form')} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">Open studio <ArrowRight className="size-4" /></button>
+    <main className="min-h-dvh bg-background text-foreground">
+      <nav className="sticky top-0 z-40 flex items-center justify-between border-b border-border/70 bg-background/90 px-5 py-4 backdrop-blur-xl md:px-10">
+        <button onClick={() => setStep('home')} className="flex items-center gap-2.5" aria-label="Back to home">
+          <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Sparkles className="size-4" /></span>
+          <span className="font-semibold tracking-tight">KAIROS</span>
+        </button>
+        <div className="flex items-center gap-3">
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${apiOnline ? 'bg-green-100 text-green-700' : apiOnline === false ? 'bg-red-100 text-red-700' : 'bg-secondary text-muted-foreground'}`}>
+            {apiOnline ? 'Backend connected' : apiOnline === false ? 'Backend offline' : 'Checking backend'}
+          </span>
+          <button onClick={() => setStep('form')} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
+            Open studio <ArrowRight className="size-4" />
+          </button>
+        </div>
       </nav>
 
       <AnimatePresence mode="wait">
-        {step === 'home' && <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <section id="studio" className="relative flex min-h-[92dvh] items-center px-5 pb-20 pt-32 md:px-10 lg:px-20">
-            <div className="pointer-events-none absolute -right-32 top-28 size-[30rem] rounded-full bg-primary/10 blur-3xl" /><div className="pointer-events-none absolute left-1/3 top-20 size-44 rounded-full bg-accent/30 blur-3xl" />
-            <div className="mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_.95fr]">
-              <div className="relative z-10 max-w-2xl"><div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-[.16em] text-primary"><span className="size-1.5 animate-pulse rounded-full bg-accent" /> Personal content intelligence</div><h1 className="text-balance font-serif text-5xl leading-[.98] tracking-[-.045em] md:text-7xl lg:text-[6.6rem]">Make your next post feel <em className="text-primary">inevitable.</em></h1><p className="mt-7 max-w-lg text-lg leading-8 text-muted-foreground md:text-xl">TrendPilot turns one product thought into the hooks, memes, dialogues, and short-form scripts your audience is already waiting to share.</p><div className="mt-9 flex flex-wrap items-center gap-4"><button onClick={() => setStep('form')} className="group inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 font-semibold text-primary-foreground shadow-lg transition hover:-translate-y-1 hover:shadow-primary/25"><WandSparkles className="size-4" /> Create a content pulse <ArrowRight className="size-4 transition group-hover:translate-x-1" /></button><a href="#how" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground">See the system <ArrowDown className="size-4" /></a></div><div className="mt-12 flex items-center gap-6 text-xs text-muted-foreground"><span className="flex items-center gap-2"><span className="size-2 rounded-full bg-accent" /> No prompt gymnastics</span><span className="flex items-center gap-2"><span className="size-2 rounded-full bg-primary" /> Brand voice memory</span></div></div>
-              <div className="relative min-h-[30rem] lg:min-h-[38rem]"><div className="absolute inset-6 rotate-2 rounded-[2rem] bg-primary shadow-2xl shadow-primary/20" /><div className="absolute inset-0 overflow-hidden rounded-[2rem] border border-primary/10 bg-card p-5 shadow-xl md:p-7"><div className="flex items-center justify-between border-b border-border pb-5"><div><p className="font-mono text-[10px] uppercase tracking-[.22em] text-muted-foreground">Live content pulse</p><p className="mt-1 text-sm font-semibold">CampusWear · today</p></div><span className="rounded-full bg-accent px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-accent-foreground">Ready to post</span></div><div className="mt-5 grid grid-cols-2 gap-3"><div className="col-span-2 rounded-2xl bg-primary p-5 text-primary-foreground"><div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wider text-primary-foreground/70">Viral hook</span><Zap className="size-4 text-accent" /></div><p className="mt-10 max-w-sm font-serif text-2xl leading-tight">“POV: your t-shirt survives hostel laundry better than your GPA”</p><div className="mt-5 flex gap-2"><span className="rounded-full bg-primary-foreground/15 px-2.5 py-1 text-[10px]">#POV</span><span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-bold text-accent-foreground">92% fit</span></div></div><div className="rounded-2xl border border-border bg-secondary p-4"><MessageCircle className="size-4 text-primary" /><p className="mt-9 text-sm font-semibold">3-line dialogue</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Built for a friend-to-friend reel.</p></div><div className="rounded-2xl border border-border bg-accent p-4 text-accent-foreground"><Play className="size-4" /><p className="mt-9 text-sm font-semibold">Shoot plan</p><p className="mt-1 text-xs leading-5 opacity-70">12 sec · 3 scenes</p></div></div><div className="mt-6 flex items-center justify-between text-xs text-muted-foreground"><span>Voice match</span><span className="font-mono font-semibold text-foreground">94.8%</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full w-[94.8%] rounded-full bg-primary" /></div></div><div className="absolute -bottom-4 -left-4 rounded-2xl border border-border bg-card px-4 py-3 shadow-lg"><p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Trend signal</p><p className="mt-1 flex items-center gap-2 text-sm font-semibold"><span className="size-2 rounded-full bg-accent" /> Hostel-core is moving</p></div></div>
+        {step === 'home' && (
+          <motion.section key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mx-auto grid min-h-[calc(100dvh-73px)] max-w-7xl items-center gap-12 px-5 py-16 md:grid-cols-[1.05fr_.95fr] md:px-10 lg:px-20">
+            <div>
+              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold uppercase tracking-[.16em] text-primary">
+                <span className="size-1.5 rounded-full bg-accent" /> Backend-powered content intelligence
+              </div>
+              <h1 className="text-balance font-serif text-5xl leading-[.98] tracking-[-.045em] md:text-7xl">Make your next post feel <em className="text-primary">inevitable.</em></h1>
+              <p className="mt-7 max-w-lg text-lg leading-8 text-muted-foreground">KAIROS turns one product thought into backend-generated hooks, memes, dialogues, captions, and short-form scripts.</p>
+              <button onClick={() => setStep('form')} className="mt-9 inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 font-semibold text-primary-foreground shadow-lg">
+                <WandSparkles className="size-4" /> Create content <ArrowRight className="size-4" />
+              </button>
             </div>
-          </section>
-          <section id="how" className="border-y border-border/70 bg-secondary/60 px-5 py-20 md:px-10 lg:px-20"><div className="mx-auto max-w-7xl"><div className="grid gap-10 lg:grid-cols-[.75fr_1.25fr]"><div><p className="font-mono text-xs uppercase tracking-[.2em] text-primary">The content loop</p><h2 className="mt-4 max-w-md font-serif text-4xl leading-tight tracking-tight md:text-5xl">Less blank-page panic. More <em className="text-primary">“send this.”</em></h2></div><div className="grid gap-3 sm:grid-cols-3">{features.map((item, index) => { const Icon = item.icon; return <button key={item.title} onClick={() => setActiveFeature(index)} className={`group rounded-2xl border p-5 text-left transition-all duration-300 ${activeFeature === index ? 'border-primary bg-card shadow-md -translate-y-1' : 'border-border bg-background/60 hover:border-primary/40'}`}><Icon className={`size-5 transition ${activeFeature === index ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} /><p className="mt-12 font-semibold">{item.title}</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.copy}</p><ChevronRight className={`mt-5 size-4 transition ${activeFeature === index ? 'translate-x-1 text-primary' : 'text-muted-foreground'}`} /></button> })}</div></div></div></section>
-          <section id="pulse" className="px-5 py-24 md:px-10 lg:px-20"><div className="mx-auto max-w-7xl"><div className="flex flex-wrap items-end justify-between gap-6"><div><p className="font-mono text-xs uppercase tracking-[.2em] text-primary">One input, many directions</p><h2 className="mt-3 font-serif text-4xl tracking-tight md:text-5xl">Your brand’s next <em className="text-primary">content pulse.</em></h2></div><p className="max-w-sm text-sm leading-6 text-muted-foreground">Designed to move from idea to publishable formats without losing the human bit.</p></div><div className="mt-10 grid auto-rows-[11rem] gap-4 md:grid-cols-4"><div className="group relative row-span-2 overflow-hidden rounded-3xl bg-primary p-7 text-primary-foreground shadow-md transition hover:-translate-y-1"><span className="absolute -right-8 -top-10 size-44 rounded-full border-[22px] border-accent/80 transition group-hover:scale-125" /><p className="font-mono text-xs uppercase tracking-wider text-primary-foreground/60">01 · Hook lab</p><p className="absolute bottom-7 max-w-xs font-serif text-3xl leading-tight">Start with the line that earns the next second.</p></div><div className="col-span-2 rounded-3xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"><div className="flex items-center justify-between"><span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">02 · Format match</span><span className="rounded-full bg-accent px-2 py-1 text-[10px] font-bold text-accent-foreground">LIVE LIBRARY</span></div><div className="mt-9 flex items-end gap-2"><span className="text-4xl font-semibold">POV</span><span className="mb-1 text-sm text-muted-foreground">→ audience: students</span></div></div><div className="rounded-3xl bg-accent p-6 text-accent-foreground shadow-sm transition hover:-translate-y-1 hover:shadow-md"><span className="font-mono text-xs uppercase tracking-wider opacity-60">03 · Voice</span><p className="mt-8 font-serif text-2xl leading-tight">Casual, sharp, yours.</p></div><div className="rounded-3xl border border-border bg-secondary p-6 transition hover:-translate-y-1 hover:shadow-md"><span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">04 · Feedback memory</span><p className="mt-8 text-sm font-semibold">“More funny” becomes a better next draft.</p></div></div></div></section>
-          <section className="border-t border-border/70 bg-primary px-5 py-20 text-primary-foreground md:px-10 lg:px-20"><div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-8"><div><p className="font-mono text-xs uppercase tracking-[.2em] text-accent">Ready when your idea is</p><h2 className="mt-3 max-w-xl font-serif text-4xl leading-tight md:text-5xl">Give the algorithm something worth sharing.</h2></div><button onClick={() => setStep('form')} className="inline-flex items-center gap-3 rounded-full bg-accent px-6 py-3.5 font-semibold text-accent-foreground shadow-lg transition hover:-translate-y-1 hover:shadow-xl">Open TrendPilot <ArrowRight className="size-4" /></button></div></section>
-        </motion.div>}
-        {step === 'form' && <FormView form={form} tones={tones} update={update} onBack={() => setStep('home')} onGenerate={() => generate()} isGenerating={isGenerating} />}
-        {step === 'results' && <ResultsView output={output} feedback={feedback} onBack={() => setStep('form')} onGenerate={() => generate(true)} onCopy={copy} onFeedback={submitFeedback} />}
+            <PreviewCard output={previewOutput} />
+          </motion.section>
+        )}
+
+        {step === 'form' && (
+          <motion.section key="form" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto min-h-dvh max-w-5xl px-5 pb-20 pt-16 md:px-10">
+            <button onClick={() => setStep('home')} className="mb-5 text-sm text-muted-foreground transition hover:text-foreground">Back to studio</button>
+            <h1 className="font-serif text-5xl leading-tight tracking-tight">Give your brand a <em className="text-primary">point of view.</em></h1>
+            <div className="mt-8 grid gap-5 lg:grid-cols-[1.2fr_.8fr]">
+              <div className="rounded-3xl border border-border bg-card p-6 shadow-md md:p-8">
+                <div className="grid gap-5 md:grid-cols-2">
+                  <Field label="Brand name" value={form.brand} placeholder="KAIROS Labs" onChange={(v) => update('brand', v)} />
+                  <Field label="Audience" value={form.audience} placeholder="College students, founders, gamers..." onChange={(v) => update('audience', v)} />
+                  <div className="md:col-span-2"><Field label="Product or service" value={form.product} placeholder="Describe what you want to promote" onChange={(v) => update('product', v)} multiline /></div>
+                </div>
+                <ChoiceGroup label="Platform" options={platforms} value={form.platform} onChange={(v) => update('platform', v)} />
+                <ChoiceGroup label="Tone" options={tones} value={form.tone} onChange={(v) => update('tone', v)} />
+              </div>
+              <div className="flex flex-col gap-5">
+                <div className="rounded-3xl border border-border bg-secondary p-6">
+                  <Field label="Requirements" value={form.requirements} placeholder="Language, style, things to avoid, or campaign notes" onChange={(v) => update('requirements', v)} multiline />
+                </div>
+                <div className="rounded-3xl bg-primary p-6 text-primary-foreground">
+                  <div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-accent text-accent-foreground"><Check className="size-4" /></span><p className="font-semibold">Backend generation</p></div>
+                  <p className="mt-5 text-sm leading-6 text-primary-foreground/75">Calls /api/product/create and /api/content/generate.</p>
+                  <button disabled={isGenerating || !canGenerate} onClick={() => generate()} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3.5 font-semibold text-accent-foreground disabled:cursor-wait disabled:opacity-70">
+                    {isGenerating ? <><RefreshCw className="size-4 animate-spin" /> Generating...</> : <><Sparkles className="size-4" /> Generate content</>}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        )}
+
+        {step === 'results' && output && (
+          <ResultsView output={output} feedback={feedback} isGenerating={isGenerating} onBack={() => setStep('form')} onGenerate={() => generate(true)} onCopy={copy} onFeedback={submitFeedback} />
+        )}
       </AnimatePresence>
     </main>
   )
 }
 
-function Intro() { return <motion.div initial={{ opacity: 1 }} animate={{ opacity: 0 }} transition={{ delay: 1.15, duration: .55 }} className="fixed inset-0 z-50 grid place-items-center bg-primary text-primary-foreground"><motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: .7, ease: [.22, 1, .36, 1] }} className="text-center"><div className="mx-auto grid size-16 place-items-center rounded-2xl border border-primary-foreground/20 bg-primary-foreground/10"><Sparkles className="size-7 text-accent" /></div><p className="mt-5 font-serif text-4xl tracking-tight">TrendPilot</p><p className="mt-2 font-mono text-[10px] uppercase tracking-[.3em] text-primary-foreground/60">Your brand, in the scroll</p></motion.div></motion.div> }
+function Field({ label, value, onChange, multiline = false, placeholder = '' }: { label: string; value: string; onChange: (value: string) => void; multiline?: boolean; placeholder?: string }) {
+  const className = 'mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/15'
+  return <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>{multiline ? <textarea rows={4} value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} className={className} /> : <input value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} className={className} />}</label>
+}
 
-function Field({ label, value, onChange, placeholder, multiline = false }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; multiline?: boolean }) { const className = 'mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/15'; return <label className="block"><span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>{multiline ? <textarea rows={4} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className={className} /> : <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className={className} />}</label> }
+function ChoiceGroup({ label, options, value, onChange }: { label: string; options: string[]; value: string; onChange: (value: string) => void }) {
+  return <div className="mt-8 border-t border-border pt-7"><p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p><div className="mt-3 flex flex-wrap gap-2">{options.map((item) => <button key={item} onClick={() => onChange(item)} className={`rounded-full border px-4 py-2.5 text-sm transition ${value === item ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background hover:border-primary/50'}`}>{item}</button>)}</div></div>
+}
 
-function FormView({ form, tones, update, onBack, onGenerate, isGenerating }: { form: FormState; tones: string[]; update: (key: keyof FormState, value: string) => void; onBack: () => void; onGenerate: () => void; isGenerating: boolean }) { return <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto min-h-dvh max-w-5xl px-5 pb-20 pt-32 md:px-10"><div className="mb-10 flex items-start justify-between gap-6"><div><button onClick={onBack} className="mb-5 text-sm text-muted-foreground transition hover:text-foreground">← Back to studio</button><p className="font-mono text-xs uppercase tracking-[.2em] text-primary">Content brief · 01</p><h1 className="mt-3 max-w-2xl font-serif text-5xl leading-tight tracking-tight md:text-6xl">Give your brand a <em className="text-primary">point of view.</em></h1><p className="mt-4 max-w-xl text-muted-foreground">A few sharp inputs are all TrendPilot needs to make the first draft feel like you.</p></div><div className="hidden size-14 rounded-2xl bg-accent p-3 text-accent-foreground md:block"><WandSparkles className="size-full" /></div></div><div className="grid gap-5 lg:grid-cols-[1.2fr_.8fr]"><div className="rounded-3xl border border-border bg-card p-6 shadow-md md:p-8"><div className="grid gap-5 md:grid-cols-2"><Field label="Brand name" value={form.brand} onChange={(v) => update('brand', v)} /><Field label="Who are you speaking to?" value={form.audience} onChange={(v) => update('audience', v)} /><div className="md:col-span-2"><Field label="Product or service" value={form.product} onChange={(v) => update('product', v)} multiline /></div></div><div className="mt-8 border-t border-border pt-7"><p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Where will it live?</p><div className="mt-3 flex flex-wrap gap-2">{['Instagram', 'YouTube Shorts', 'Instagram + Shorts', 'LinkedIn'].map((item) => <button key={item} onClick={() => update('platform', item)} className={`rounded-full border px-4 py-2.5 text-sm transition ${form.platform === item ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background hover:border-primary/50'}`}>{item}</button>)}</div></div><div className="mt-8 border-t border-border pt-7"><p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Brand voice</p><div className="mt-3 flex flex-wrap gap-2">{tones.map((item) => <button key={item} onClick={() => update('tone', item)} className={`rounded-full border px-4 py-2.5 text-sm transition ${form.tone === item ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background hover:border-primary/50'}`}>{item}</button>)}</div></div></div><div className="flex flex-col gap-5"><div className="rounded-3xl border border-border bg-secondary p-6"><Field label="Anything to keep in mind?" value={form.requirements} onChange={(v) => update('requirements', v)} multiline /><p className="mt-3 text-xs leading-5 text-muted-foreground">Examples: “Use Hinglish”, “no corporate words”, “make it feel like a friend sent it”.</p></div><div className="rounded-3xl bg-primary p-6 text-primary-foreground"><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-accent text-accent-foreground"><Check className="size-4" /></span><p className="font-semibold">Your content brain</p></div><p className="mt-5 text-sm leading-6 text-primary-foreground/75">TrendPilot will use this brief as a creative north star for every format it generates.</p><button disabled={isGenerating} onClick={onGenerate} className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3.5 font-semibold text-accent-foreground transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70">{isGenerating ? <><RefreshCw className="size-4 animate-spin" /> Finding your angle…</> : <><Sparkles className="size-4" /> Generate content pulse</>}</button></div></div></div></motion.section> }
+function PreviewCard({ output }: { output: Output }) {
+  return <div className="rounded-[2rem] border border-primary/10 bg-card p-6 shadow-xl"><p className="font-mono text-[10px] uppercase tracking-[.22em] text-muted-foreground">Live content pulse</p><div className="mt-5 rounded-2xl bg-primary p-5 text-primary-foreground"><p className="text-xs font-semibold uppercase tracking-wider text-primary-foreground/70">Viral hook</p><p className="mt-10 font-serif text-2xl leading-tight">{output.hook}</p></div><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-2xl border border-border bg-secondary p-4"><MessageCircle className="size-4 text-primary" /><p className="mt-9 text-sm font-semibold">{output.dialogue.length}-line dialogue</p></div><div className="rounded-2xl border border-border bg-accent p-4 text-accent-foreground"><Play className="size-4" /><p className="mt-9 text-sm font-semibold">{output.script.length} scenes</p></div></div></div>
+}
 
-function ContentCard({ label, icon: Icon, children, className = '', action }: { label: string; icon: typeof Flame; children: React.ReactNode; className?: string; action?: React.ReactNode }) { return <article className={`rounded-3xl border border-border bg-card p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md ${className}`}><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-muted-foreground"><Icon className="size-4 text-primary" /> {label}</div>{action}</div><div className="mt-6">{children}</div></article> }
+function ResultsView({ output, feedback, isGenerating, onBack, onGenerate, onCopy, onFeedback }: { output: Output; feedback: string | null; isGenerating: boolean; onBack: () => void; onGenerate: () => void; onCopy: (text: string) => void; onFeedback: (value: string) => void }) {
+  const isVideo = isVideoMedia(output.mediaUrl)
+  return (
+    <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto min-h-dvh max-w-7xl px-5 pb-24 pt-16 md:px-10 lg:px-16">
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <button onClick={onBack} className="mb-5 text-sm text-muted-foreground transition hover:text-foreground">Edit brief</button>
+          <p className="font-mono text-xs uppercase tracking-[.2em] text-primary">Content pulse</p>
+          <h1 className="mt-3 font-serif text-5xl tracking-tight">The scroll is <em className="text-primary">calling.</em></h1>
+          <p className="mt-4 max-w-lg text-muted-foreground">Generated around <span className="font-semibold text-foreground">{output.trend}</span>.</p>
+        </div>
+        <div className="flex gap-2">
+          <button disabled={isGenerating} onClick={onGenerate} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold disabled:cursor-wait disabled:opacity-70"><RefreshCw className={`size-4 ${isGenerating ? 'animate-spin' : ''}`} /> {isGenerating ? 'Generating' : 'New angle'}</button>
+          <button onClick={() => onCopy([output.hook, output.dialogue.join('\n'), output.caption].join('\n\n'))} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Copy className="size-4" /> Copy all</button>
+        </div>
+      </div>
 
-function ResultsView({ output, feedback, onBack, onGenerate, onCopy, onFeedback }: { output: Output; feedback: string | null; onBack: () => void; onGenerate: () => void; onCopy: (text: string) => void; onFeedback: (value: string) => void }) { return <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto min-h-dvh max-w-7xl px-5 pb-24 pt-32 md:px-10 lg:px-16"><div className="flex flex-wrap items-end justify-between gap-6"><div><button onClick={onBack} className="mb-5 text-sm text-muted-foreground transition hover:text-foreground">← Edit brief</button><p className="font-mono text-xs uppercase tracking-[.2em] text-primary">Content pulse · CampusWear</p><h1 className="mt-3 font-serif text-5xl tracking-tight md:text-6xl">The scroll is <em className="text-primary">calling.</em></h1><p className="mt-4 max-w-lg text-muted-foreground">A complete, shootable direction built around <span className="font-semibold text-foreground">{output.trend}</span>.</p></div><div className="flex gap-2"><button onClick={onGenerate} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold transition hover:border-primary hover:text-primary"><RefreshCw className="size-4" /> New angle</button><button onClick={() => onCopy([output.hook, output.dialogue.join('\n'), output.caption].join('\n\n'))} className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:-translate-y-0.5"><Copy className="size-4" /> Copy all</button></div></div><div className="mt-10 grid auto-rows-auto gap-4 lg:grid-cols-3"><ContentCard label="Viral hook" icon={Flame} className="bg-primary text-primary-foreground lg:col-span-2" action={<button onClick={() => onCopy(output.hook)} className="text-primary-foreground/70 transition hover:text-accent"><Copy className="size-4" /></button>}><p className="max-w-3xl font-serif text-3xl leading-tight md:text-5xl">“{output.hook}”</p><div className="mt-7 flex flex-wrap gap-2"><span className="rounded-full bg-primary-foreground/15 px-3 py-1.5 text-xs">#{output.trend.split(' ')[0]}</span><span className="rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground">94% audience fit</span></div></ContentCard><ContentCard label="Meme format" icon={Heart} className="bg-accent text-accent-foreground"><p className="font-serif text-3xl leading-tight">{output.meme}</p><div className="mt-8 rounded-2xl border border-accent-foreground/15 bg-accent-foreground/10 p-4"><p className="font-mono text-[10px] uppercase tracking-widest opacity-60">Template energy</p><p className="mt-2 text-sm font-semibold">Instantly recognisable. Easy to remix.</p></div></ContentCard><ContentCard label="Dialogue" icon={MessageCircle} className="lg:col-span-1"><div className="space-y-4">{output.dialogue.map((line, index) => <div key={line} className="flex gap-3"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-secondary font-mono text-[10px] text-primary">{index + 1}</span><p className="text-lg leading-7">{line}</p></div>)}</div></ContentCard><ContentCard label="Reel script · 12 sec" icon={Play} className="lg:col-span-2"><div className="space-y-5">{output.script.map((scene) => <div key={scene.label} className="grid gap-1 border-b border-border pb-5 last:border-0 last:pb-0 md:grid-cols-[11rem_1fr]"><p className="font-mono text-xs uppercase tracking-wider text-primary">{scene.label}</p><p className="text-sm leading-6 text-muted-foreground">{scene.detail}</p></div>)}</div></ContentCard><ContentCard label="Caption" icon={Sparkles} className="lg:col-span-3"><div className="flex flex-wrap items-start justify-between gap-6"><p className="max-w-3xl text-xl leading-8">{output.caption}</p><button onClick={() => onCopy(output.caption)} className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-semibold transition hover:border-primary hover:text-primary"><Copy className="size-4" /> Copy caption</button></div></ContentCard></div><div className="mt-14 rounded-3xl border border-border bg-secondary p-6 md:p-8"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="font-serif text-2xl">Tune the next one</p><p className="mt-1 text-sm text-muted-foreground">Your feedback becomes part of the brand brain.</p></div>{feedback && <span className="rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-primary">Saved: {feedback}</span>}</div><div className="mt-6 flex flex-wrap gap-2">{[['More like this', 'more_like_this'], ['Make it funnier', 'more_funny'], ['More professional', 'more_professional'], ['Avoid this style', 'avoid_style']].map(([label, value]) => <button key={value} onClick={() => onFeedback(value)} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-primary hover:text-primary"><Heart className="size-3.5" /> {label}</button>)}</div></div></motion.section> }
+      <div className="mt-10 grid gap-4 lg:grid-cols-3">
+        <ContentCard label="Viral hook" icon={Flame} className="bg-primary text-primary-foreground lg:col-span-2">
+          <p className="font-serif text-3xl leading-tight md:text-5xl">{output.hook}</p>
+        </ContentCard>
+
+        <ContentCard label="Meme format" icon={Heart} className="border-border bg-white text-slate-950">
+          <p className="font-serif text-3xl leading-tight">{output.meme}</p>
+        </ContentCard>
+
+        <ContentCard label={`Selected media${output.mediaType ? ` - ${output.mediaType}` : ''}`} icon={Play} className="lg:col-span-1">
+          {output.mediaUrl ? (
+            isVideo ? (
+              <video src={output.mediaUrl} controls muted loop playsInline className="aspect-video w-full rounded-2xl bg-black object-contain" />
+            ) : (
+              <img src={output.mediaUrl} alt={output.mediaTitle || 'Generated media'} className="aspect-video w-full rounded-2xl object-contain bg-black" />
+            )
+          ) : (
+            <div className="grid aspect-video place-items-center rounded-2xl border border-dashed border-border bg-secondary p-4 text-center text-sm text-muted-foreground">No playable URL returned yet</div>
+          )}
+          <p className="mt-3 text-xs text-muted-foreground">{output.mediaTitle || 'KLIPY media'} - {output.mediaSource || 'pending'} - {output.mediaStatus || 'no status'}</p>
+          {output.mediaUrl && <a href={output.mediaUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-xs font-semibold text-primary hover:underline">Open media URL</a>}
+          {output.mediaReason && <p className="mt-2 text-xs leading-5 text-muted-foreground">{output.mediaReason}</p>}
+        </ContentCard>
+
+        <ContentCard label="Dialogue" icon={MessageCircle}>
+          <div className="space-y-4">{output.dialogue.map((line, index) => <div key={`${line}-${index}`} className="flex gap-3"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-secondary font-mono text-[10px] text-primary">{index + 1}</span><p className="text-lg leading-7">{line}</p></div>)}</div>
+        </ContentCard>
+
+        <ContentCard label="Reel script" icon={Play} className="lg:col-span-2">
+          <div className="space-y-5">{output.script.map((scene) => <div key={`${scene.label}-${scene.detail}`} className="grid gap-1 border-b border-border pb-5 last:border-0 last:pb-0 md:grid-cols-[8rem_1fr]"><p className="font-mono text-xs uppercase tracking-wider text-primary">{scene.label}</p><p className="text-sm leading-6 text-muted-foreground">{scene.detail}</p></div>)}</div>
+        </ContentCard>
+
+        <ContentCard label="Caption" icon={Sparkles} className="lg:col-span-3">
+          <p className="text-xl leading-8">{output.caption}</p>
+        </ContentCard>
+      </div>
+
+      <div className="mt-14 rounded-3xl border border-border bg-secondary p-6 md:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="font-serif text-2xl">Tune the next one</p><p className="mt-1 text-sm text-muted-foreground">Feedback is saved through /api/feedback/create.</p></div>{feedback && <span className="rounded-full bg-card px-3 py-1.5 text-xs font-semibold text-primary">Saved: {feedback}</span>}</div>
+        <div className="mt-6 flex flex-wrap gap-2">{['More like this', 'Make it funnier', 'More professional', 'Avoid this style'].map((label) => <button key={label} onClick={() => onFeedback(label)} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold"><Heart className="size-3.5" /> {label}</button>)}</div>
+      </div>
+    </motion.section>
+  )
+}
+
+function ContentCard({ label, icon: Icon, children, className = '' }: { label: string; icon: typeof Flame; children: React.ReactNode; className?: string }) {
+  return <article className={`rounded-3xl border border-border bg-card p-6 shadow-sm ${className}`}><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-muted-foreground"><Icon className="size-4 text-primary" /> {label}</div><div className="mt-6">{children}</div></article>
+}

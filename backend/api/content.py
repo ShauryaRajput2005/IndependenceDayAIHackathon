@@ -6,7 +6,9 @@ from pydantic import ValidationError
 from database.database import execute, fetch_one
 from schemas.content import ContentGenerateRequest, ContentGenerateResponse, GeneratedContent
 from services.llm_service import generate_content
-from services.klipy_service import fetch_klipy_meme
+from services.klipy_service import fetch_klipy_media
+from services.media_selector_service import choose_media_type_with_groq
+from services.meme_format_service import choose_meme_format
 from services.prompt_service import build_content_prompt
 from services.trend_service import get_trends
 
@@ -25,7 +27,15 @@ async def create_content(payload: ContentGenerateRequest):
     raw_content = await generate_content(product, prompt, tone)
 
     raw_content.setdefault("trend", (get_trends() or [None])[0])
-    meme = await fetch_klipy_meme(str(raw_content.get("klipy_query", product["name"])))
+    raw_content["meme_format"] = choose_meme_format(product, raw_content, tone, payload.requirements)
+    media_choice = await choose_media_type_with_groq(raw_content, tone)
+    raw_content["selected_media_type"] = media_choice["media_type"]
+    raw_content["media_feeling"] = media_choice["feeling"]
+    raw_content["media_reason"] = media_choice["reason"]
+    meme = await fetch_klipy_media(
+        str(raw_content.get("klipy_query", product["name"])),
+        media_type=media_choice["media_type"],
+    )
     raw_content["meme"] = meme
 
     try:

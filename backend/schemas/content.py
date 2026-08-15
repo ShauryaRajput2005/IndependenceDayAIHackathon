@@ -19,6 +19,8 @@ class MemeAsset(BaseModel):
     url: str | None = None
     preview: str | None = None
     source: str = "fallback"
+    mediaType: str | None = None
+    providerStatus: str | None = None
 
 
 class GeneratedContent(BaseModel):
@@ -28,6 +30,9 @@ class GeneratedContent(BaseModel):
     script: list[Scene]
     caption: str
     klipy_query: str
+    selected_media_type: str | None = None
+    media_feeling: str | None = None
+    media_reason: str | None = None
     hashtags: list[str] = []
     viral_score: int = Field(default=78, ge=0, le=100)
     trend: dict[str, Any] | None = None

@@ -1,1 +1,86 @@
-﻿{}
+[
+  {
+    "name": "POV",
+    "description": "Point-of-view scenario meme",
+    "search_queries": ["pov meme", "pov student", "pov relatable"],
+    "best_for": ["relatable", "funny", "sarcastic"],
+    "audience": ["Gen-Z", "students"]
+  },
+  {
+    "name": "Drake Approves/Disapproves",
+    "description": "Drake pointing meme — two-panel comparison",
+    "search_queries": ["drake approves meme", "drake meme", "drake nod"],
+    "best_for": ["comparison", "funny", "sarcastic"],
+    "audience": ["Gen-Z", "millennials"]
+  },
+  {
+    "name": "This Is Fine",
+    "description": "Dog sitting in burning room — everything is fine while chaos ensues",
+    "search_queries": ["this is fine meme", "everything is fine fire"],
+    "best_for": ["relatable chaos", "sarcastic", "stress"],
+    "audience": ["millennials", "Gen-Z", "professionals"]
+  },
+  {
+    "name": "Distracted Boyfriend",
+    "description": "Man looks away from girlfriend to look at another woman",
+    "search_queries": ["distracted boyfriend meme", "looking at other things"],
+    "best_for": ["comparison", "preference", "temptation"],
+    "audience": ["general"]
+  },
+  {
+    "name": "Galaxy Brain",
+    "description": "Expanding brain meme — simple to absurd reasoning progression",
+    "search_queries": ["expanding brain meme", "galaxy brain", "big brain"],
+    "best_for": ["sarcastic logic", "funny reasoning", "roasts"],
+    "audience": ["Gen-Z", "students"]
+  },
+  {
+    "name": "Crying Jordan",
+    "description": "Michael Jordan crying face — used for sadness/loss",
+    "search_queries": ["crying jordan meme", "sad meme", "crying face"],
+    "best_for": ["failure", "relatable sadness", "sarcastic"],
+    "audience": ["millennials", "Gen-Z"]
+  },
+  {
+    "name": "One Does Not Simply",
+    "description": "Boromir from Lord of the Rings — 'one does not simply...'",
+    "search_queries": ["one does not simply meme", "boromir meme"],
+    "best_for": ["exaggeration", "difficulty", "professional humor"],
+    "audience": ["millennials", "professionals"]
+  },
+  {
+    "name": "Mocking SpongeBob",
+    "description": "SpongeBob alternating caps — mocking repetition",
+    "search_queries": ["spongebob mocking meme", "alternating caps", "spongebob meme"],
+    "best_for": ["roast", "sarcasm", "mockery"],
+    "audience": ["Gen-Z", "students"]
+  },
+  {
+    "name": "Is This a Pigeon",
+    "description": "Anime character misidentifying butterfly — confident wrong labeling",
+    "search_queries": ["is this a pigeon meme", "butterfly meme"],
+    "best_for": ["misidentification", "funny", "product alternatives"],
+    "audience": ["Gen-Z", "millennials"]
+  },
+  {
+    "name": "Woman Yelling at Cat",
+    "description": "Woman yelling / cat at dinner table two-panel meme",
+    "search_queries": ["woman yelling at cat meme", "cat meme", "dinner table cat"],
+    "best_for": ["confrontation", "sarcastic", "two-panel contrast"],
+    "audience": ["general", "millennials"]
+  },
+  {
+    "name": "Trade Offer",
+    "description": "I receive/you receive trade offer format",
+    "search_queries": ["trade offer meme", "i receive you receive"],
+    "best_for": ["value proposition", "funny offers", "product benefits"],
+    "audience": ["Gen-Z", "students"]
+  },
+  {
+    "name": "Hinglish Relatable",
+    "description": "Indian-specific Hinglish humor meme for desi audiences",
+    "search_queries": ["indian meme", "desi meme", "hinglish funny", "bhai meme"],
+    "best_for": ["Indian audience", "relatable", "funny", "sarcastic"],
+    "audience": ["Indian Gen-Z", "Indian students", "desi"]
+  }
+]

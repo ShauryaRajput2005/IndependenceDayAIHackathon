@@ -1,1 +1,1 @@
-﻿# __init__ — placeholder
+# api/__init__.py — Router registry

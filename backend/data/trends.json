@@ -1,1 +1,92 @@
-﻿{}
+[
+  {
+    "name": "POV",
+    "description": "Point-of-view storytelling that puts the viewer in a relatable scenario",
+    "best_for": "relatable situations, identity-based humor",
+    "audience": ["Gen-Z", "students", "millennials"],
+    "tones": ["funny", "sarcastic", "relatable", "emotional"],
+    "platforms": ["instagram", "tiktok", "youtube"],
+    "example": "POV: Your resume gets rejected before HR even opens it"
+  },
+  {
+    "name": "Expectation vs Reality",
+    "description": "Split comparison between what we imagine vs what actually happens",
+    "best_for": "product benefits, lifestyle comparison, humor",
+    "audience": ["general", "Gen-Z", "millennials"],
+    "tones": ["funny", "sarcastic", "relatable"],
+    "platforms": ["instagram", "tiktok", "youtube"],
+    "example": "Expectation: Landing dream job. Reality: Rejection email at 2am"
+  },
+  {
+    "name": "Nobody",
+    "description": "Nobody: ... / Me: ... format highlighting unexpected or relatable behavior",
+    "best_for": "unexpected behavior, niche humor, personality quirks",
+    "audience": ["Gen-Z", "students"],
+    "tones": ["sarcastic", "funny"],
+    "platforms": ["instagram", "twitter", "tiktok"],
+    "example": "Nobody: / Me at 3am: Rebuilding my resume for the 10th time"
+  },
+  {
+    "name": "Honest Ad",
+    "description": "Brutally honest product pitch that subverts traditional advertising",
+    "best_for": "direct product promotion, anti-ad humor",
+    "audience": ["Gen-Z", "millennials", "professionals"],
+    "tones": ["sarcastic", "professional", "funny"],
+    "platforms": ["instagram", "tiktok", "linkedin"],
+    "example": "We literally just make your resume not look like a Google Doc disaster"
+  },
+  {
+    "name": "Transformation",
+    "description": "Before-and-after story arc showing product impact",
+    "best_for": "product demos, glow-up stories, before-after",
+    "audience": ["general", "professionals", "students"],
+    "tones": ["inspirational", "professional", "relatable"],
+    "platforms": ["instagram", "tiktok", "youtube"],
+    "example": "Before: 0 callbacks. After using AI Resume Builder: 5 interviews this week"
+  },
+  {
+    "name": "Stitching Facts",
+    "description": "Drop a surprising or counterintuitive fact to hook attention",
+    "best_for": "statistics, awareness, education",
+    "audience": ["general", "professionals", "students"],
+    "tones": ["professional", "informative", "shocking"],
+    "platforms": ["tiktok", "instagram", "youtube"],
+    "example": "75% of resumes are rejected by ATS before a human ever reads them"
+  },
+  {
+    "name": "Day in the Life",
+    "description": "Follow a character through their routine, naturally integrating the product",
+    "best_for": "lifestyle integration, product demo, storytelling",
+    "audience": ["general", "millennials", "Gen-Z"],
+    "tones": ["relatable", "aspirational", "professional"],
+    "platforms": ["instagram", "tiktok", "youtube"],
+    "example": "Day in the life of someone who actually gets callbacks"
+  },
+  {
+    "name": "Duet / Reply",
+    "description": "Respond to a common question or pain point your audience has",
+    "best_for": "objection handling, community engagement",
+    "audience": ["Gen-Z", "students"],
+    "tones": ["funny", "sarcastic", "relatable"],
+    "platforms": ["tiktok", "instagram"],
+    "example": "Replying to: 'Why do I never get interview calls?'"
+  },
+  {
+    "name": "Storytime",
+    "description": "First-person story with a hook, conflict, and resolution",
+    "best_for": "brand origin, testimonials, customer stories",
+    "audience": ["general", "millennials"],
+    "tones": ["emotional", "relatable", "inspirational"],
+    "platforms": ["instagram", "youtube", "tiktok"],
+    "example": "Story time: The day I sent 100 resumes and got zero replies"
+  },
+  {
+    "name": "Green Screen React",
+    "description": "React to real content (screenshots, articles) with commentary",
+    "best_for": "current events, industry news, awareness",
+    "audience": ["Gen-Z", "professionals"],
+    "tones": ["sarcastic", "funny", "professional"],
+    "platforms": ["tiktok", "instagram"],
+    "example": "Reacting to a LinkedIn post about ATS rejection rates"
+  }
+]

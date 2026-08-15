@@ -1,7 +1,10 @@
-# TrendPilot AI — Python dependencies
-# Populate with actual versions before installing.
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
+pydantic-settings
+sqlalchemy
 httpx
-openai
+python-dotenv
+google-genai
+pytest
+pytest-asyncio

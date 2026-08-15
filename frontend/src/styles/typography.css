@@ -1,0 +1,23 @@
+@theme {
+  --font-display: 'Instrument Serif', serif;
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-ink);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+    /* For Instrument Serif, tight letter spacing and adjusted line height often look best */
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+}

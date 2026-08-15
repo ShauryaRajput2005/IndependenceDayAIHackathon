@@ -1,2 +1,0 @@
-﻿// FeedbackButtons — placeholder
-export {};

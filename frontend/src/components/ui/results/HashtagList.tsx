@@ -1,2 +1,0 @@
-﻿// HashtagList — placeholder
-export {};

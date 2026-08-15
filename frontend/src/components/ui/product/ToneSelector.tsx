@@ -1,2 +1,0 @@
-﻿// ToneSelector — placeholder
-export {};

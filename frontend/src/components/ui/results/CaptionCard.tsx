@@ -1,2 +1,0 @@
-﻿// CaptionCard — placeholder
-export {};

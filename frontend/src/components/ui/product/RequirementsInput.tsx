@@ -1,2 +1,0 @@
-﻿// RequirementsInput — placeholder
-export {};

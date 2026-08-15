@@ -1,2 +1,0 @@
-﻿// useFeedback — placeholder
-export {};

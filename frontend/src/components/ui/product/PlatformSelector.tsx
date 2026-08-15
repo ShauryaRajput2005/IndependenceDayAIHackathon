@@ -1,2 +1,0 @@
-﻿// PlatformSelector — placeholder
-export {};

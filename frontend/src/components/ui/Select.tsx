@@ -1,2 +1,0 @@
-﻿// Select — placeholder
-export {};

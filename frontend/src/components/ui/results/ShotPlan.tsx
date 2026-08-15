@@ -1,2 +1,0 @@
-﻿// ShotPlan — placeholder
-export {};

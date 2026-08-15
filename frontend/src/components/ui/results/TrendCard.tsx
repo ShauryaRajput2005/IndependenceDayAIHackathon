@@ -1,2 +1,0 @@
-﻿// TrendCard — placeholder
-export {};

@@ -1,2 +1,0 @@
-﻿// HowItWorks — placeholder
-export {};

@@ -1,2 +1,0 @@
-﻿// GenerationLoader — placeholder
-export {};

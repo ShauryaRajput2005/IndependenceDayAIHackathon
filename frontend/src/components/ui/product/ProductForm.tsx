@@ -1,2 +1,0 @@
-﻿// ProductForm — placeholder
-export {};

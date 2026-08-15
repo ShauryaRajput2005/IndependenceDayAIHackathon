@@ -1,1 +1,22 @@
-﻿{}
+[
+  {
+    "name": "POV",
+    "use": "Relatable first-person situations that hook fast",
+    "audience": "Gen-Z"
+  },
+  {
+    "name": "Expectation vs Reality",
+    "use": "Compare the painful old way with the easier product-led way",
+    "audience": "Students, founders, buyers"
+  },
+  {
+    "name": "Nobody meme",
+    "use": "Set up unexpected user behavior or exaggerated pain points",
+    "audience": "Meme-native audiences"
+  },
+  {
+    "name": "Starter pack",
+    "use": "Turn a target customer identity into a shareable joke",
+    "audience": "Communities with clear inside jokes"
+  }
+]

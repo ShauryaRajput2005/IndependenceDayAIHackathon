@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# SQLite databases
+*.db
+
+
 # Dependencies
 node_modules/
 __pycache__/

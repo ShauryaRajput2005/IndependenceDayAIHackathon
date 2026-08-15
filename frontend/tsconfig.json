@@ -19,5 +19,24 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "src/routes",
+    "src/layouts",
+    "src/Shell.tsx",
+    "src/router.tsx",
+    "src/routeTree.gen.ts",
+    "src/components/AppSidebarShell.tsx",
+    "src/components/BlinkClientBoundary.tsx",
+    "src/components/ui/avatar.tsx",
+    "src/components/ui/label.tsx",
+    "src/components/ui/sheet.tsx",
+    "src/components/ui/sonner.tsx",
+    "src/components/ui/tooltip.tsx",
+    "src/lib/api.ts",
+    "src/blink",
+    "vite.config.ts",
+    "tsconfig.node.json",
+    "blink-tagger.plugin.mjs"
+  ]
 }

@@ -15,6 +15,7 @@ env/
 # Build outputs
 dist/
 build/
+.next/
 *.egg-info/
 
 # IDE
@@ -37,6 +38,9 @@ Thumbs.db
 *.pyc
 .pytest_cache/
 .mypy_cache/
+*.db
+*.sqlite
+*.sqlite3
 
 # Misc
 coverage/

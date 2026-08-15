@@ -1,0 +1,2 @@
+﻿// Textarea — placeholder
+export {};

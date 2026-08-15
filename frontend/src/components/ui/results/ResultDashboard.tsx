@@ -1,0 +1,2 @@
+﻿// ResultDashboard — placeholder
+export {};

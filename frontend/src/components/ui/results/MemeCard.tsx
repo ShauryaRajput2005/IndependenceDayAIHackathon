@@ -1,0 +1,2 @@
+﻿// MemeCard — placeholder
+export {};

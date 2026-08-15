@@ -1,0 +1,2 @@
+﻿// HookCard — placeholder
+export {};

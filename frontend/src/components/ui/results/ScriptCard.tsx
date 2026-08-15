@@ -1,0 +1,2 @@
+﻿// ScriptCard — placeholder
+export {};

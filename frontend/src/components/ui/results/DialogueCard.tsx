@@ -1,0 +1,2 @@
+﻿// DialogueCard — placeholder
+export {};

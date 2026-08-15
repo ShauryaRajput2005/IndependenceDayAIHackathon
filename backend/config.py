@@ -7,6 +7,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     gemini_api_key: str = ""
+    klipy_api_key: str = ""
+    # tenor_api_key kept as alias for backwards compatibility
     tenor_api_key: str = ""
     tenor_client_key: str = "trendpilot"
     database_url: str = "sqlite:///./trendpilot.db"
